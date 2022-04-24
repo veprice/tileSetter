@@ -91,12 +91,12 @@ def update_pres(bit_df, abcs=string.ascii_lowercase):
             else:
                 N_tagged += 1
 
-        sliced = bit_df[bit_df.bit.str.startswith(i[0:3])].copy()
+        sliced = bit_df[bit_df.bit.str.startswith(i[0:2])].copy()
         # Get regex filter string
         F = get_regex(i)
 
         # Tag prefixes that match regex as 'True'
-        sliced.loc[sliced.bit.str.match(F),'prefix'] = True
+        sliced.loc[sliced.bit.str.fullmatch(F),'prefix'] = True
 
         bit_df.update(sliced)
     print('Active prefixes updated!')

@@ -19,9 +19,9 @@ nb.w_s = nb.update_pres(nb.w_s)
 # Start Default Generator
 bb = nb.nameGen('bit:35:,bit:23:')
 print(  '\nLoaded name generator \'bb\'.' +
-        'Open /HTML/tileSetter.html in your favorite browser to see the tiles!'+
-        '\nTo generate more names, type \'refresh(bb)\')')#+
-        # '\nor create new name generator using nb.nameGen().')
+        'Open /HTML/tileSetter.html in your favorite browser to see the tiles!' +
+        '\nTo generate more names, type \'refresh(bb)\')' +
+        '\nor create new name generator using nb.nameGen().' )
 # Initialize Pages
 # Name Search (for new pets)
 # ns = htmile.tileSetPage('name_search')
