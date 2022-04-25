@@ -10,6 +10,7 @@ import string
 import pandas as pd
 import numpy as np
 import datetime as dt
+import htmile as ts
 
 '''
     --------------- Segment Loading + Cleaning ------------------
@@ -199,7 +200,8 @@ class nameGen:
 
         # Run other functions
         self.get_ng()        # create name generator(s)
-        self.get_names()     # generate names
+        #self.get_names()     # generate & tileset
+        ts.tileSet(self.get_names()) # generate names & tileset
 
     def ngs(self):
         for i in self.ng_list:

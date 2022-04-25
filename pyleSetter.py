@@ -6,9 +6,10 @@ import datetime as dt
 
 
 #from dataLoader import *
+import htmile as ts
 import nameBuilder as nb
 #import petDB as pdb
-import htmile as ts
+
 
 def refresh(name_generator):
     ts.tileSet(name_generator.get_names())
