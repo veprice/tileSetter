@@ -185,7 +185,7 @@ h1 = Tagger('h1')
 br = Tagger('br',single=True)
 
 
-'''Deprecated'''
+'''Deprecated Code; here for reference'''
 # def get_links(names, server='', which_links = ['petpage'],img_no='1'):
 #
 #     names['img'] = 'http://pets.neopets.com/cpn/' +\
