@@ -17,7 +17,7 @@ def refresh(name_generator):
 nb.w_s = nb.update_pres(nb.w_s)
 #w_s = nb.update_pres(w_s)
 # Start Default Generator
-bb = nb.nameGen('bit:35:,bit:23:')
+bb = nb.nameGen('bit:34:,bit:34:')
 print(  '\nLoaded name generator \'bb\'.' +
         'Open /HTML/tileSetter.html in your favorite browser to see the tiles!' +
         '\nTo generate more names, type \'refresh(bb)\')' +
