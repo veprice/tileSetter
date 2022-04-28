@@ -201,7 +201,6 @@ class nameGen:
 
         # Run other functions
         self.get_ng()        # create name generator(s)
-        #self.get_names()     # generate & tileset
         ts.tileSet(self.get_names()) # generate names & tileset
 
     def ngs(self):
@@ -209,6 +208,7 @@ class nameGen:
             for j in i:
                 print(j)
                 print('---')
+
     def update_stats(self):
 
         stats = {}
@@ -220,13 +220,11 @@ class nameGen:
                       'All Names':len(self.names)
                      })
 
-
         stats = pd.DataFrame.from_dict(stats,orient='index')
         stats.columns = [str('NUM')]
 
         self.stats['name_data'] = stats
         self.stats['time'] = dt.datetime.now().time().strftime("%I:%M:%S %p")
-
 
         self.show_stats()
 
@@ -242,25 +240,30 @@ class nameGen:
         print('--------------')
         print('Last Update @ ' + self.stats['time'])
 
-
     def get_names(self):
-
+        # update distribution data if N has changed significantly
+        if abs(self.N - self.dd.names_per.sum()) > 50:
+            self.dd['names_per'] = np.ceil(self.N/self.dd.N_matrix/len(self.dd))\
+                                          .astype(int)
         names = pd.DataFrame(columns=['Neopet','L'])
 
+        # generate names for each name generator in self.ng_list
         for name_group in self.dd.itertuples():
             for i,matrix in enumerate(self.ng_list[name_group[0]]):
                 temp_names = build_names( matrix, name_group[3], stuck=self.stuck)
-
                 names = pd.concat([names,temp_names],ignore_index=True)
+
         names = names.drop_duplicates().sort_values(by=['L','Neopet'])\
-                     .reset_index(drop=True)
+                     .reset_index(drop=True) # Cleanup names
         self.names = names
         self.update_stats()
         return names
 
     def get_ng(self):
-        # Create generator
+        # Create general name generator matrix from user input
         name_format = self.nf
+
+        # Parse user input & set up dataframe
         seglist = name_format.split(',')
         seg_df = pd.DataFrame({}, columns=['pieces','Lmin','Lmax','regex'])
 
@@ -268,6 +271,7 @@ class nameGen:
             if ':' in seg:  # segment types denoted by preceeding :
                 seglist2 = seg.split(':')
 
+                # Interprets 'bit' type input
                 if 'bit' in seglist2[0]:
 
                     if len(seglist2[1]) == 2:
@@ -312,7 +316,7 @@ class nameGen:
                         regex = r'[a-z]'*Lmin + r'.'*(Lmax-Lmin)
                     seg_df.loc[len(seg_df)] = ['bit*',Lmin,Lmax,regex]
 
-                else:
+                else: #interprets 'cvx' style input
 #                 'x' in seg or 'v' in seg or 'c' in seg:
                     if len(seglist2[1]) > 0:
                         L = int(seglist2[1])
@@ -324,7 +328,7 @@ class nameGen:
                             seg_df.loc[len(seg_df)] = ['v*',1,1,r'[aeiouy]']
                         elif l == 'c':
                             seg_df.loc[len(seg_df)] = ['c*',1,1,r'[^aeiouy]']
-            else:
+            else: # Treat as regular string
                 seg_df.loc[len(seg_df)] = [seg,len(seg),len(seg),seg]
 
 
@@ -334,9 +338,11 @@ class nameGen:
         self.ng = seg_df # name generator
 
         self.get_ng_list()
+        # create list of generator matrices from general generator
 
     def get_ng_list(self,bits=w_s):
         ng = self.ng
+        # collapse pieces into minimum 3 letters for stuck prefixes
         if self.stuck == True:
             if ng.pieces[0] in ['x*','v*','c*','bit*'] == True:
                 while ng.loc[0,'Lmin'] < 3:
@@ -350,6 +356,7 @@ class nameGen:
         ng_list = []
         ng_list = [pd.DataFrame(columns=['piece','L','regex'])]
 
+        # create all possible generator matrices from general matrix self.ng
         for piece in ng.itertuples():
             piece_no = piece[0]
             piece_name = piece[1]
@@ -357,31 +364,37 @@ class nameGen:
             Lmax = piece[3]
             abc_count = piece[4]
 
-
+            # Creates all possible matrix combinations for 'bits' that have a range of possible values
             if Lmin != Lmax:
 
+                # Make duplicates of existing matrices in ng_list
                 ng_list_new = []
                 for j in range(len(ng_list)):
                     for i in range((Lmax-Lmin)+1):
                         ng_list_new.append(ng_list[j].copy())
 
+                # Add the range of possible 'bits' onto copied matrices
                 L_list = list(range(Lmin,Lmax+1))
-                dots = piece[4].count('.')
+                dots = piece[4].count('.')+1 #regex parsing
                 for i in range(0,len(ng_list_new),len(L_list)):
                     for l,L in enumerate(L_list):
+                        # regex parsing -- replace dots with [a-z]
+                        dots -=1
                         regex = piece[4].replace('.','',dots)
                         regex = regex.replace('.','[a-z]')
+                        # add new row to ith matrix of ng_list_new
                         ng_list_new[i+l].loc[piece_no] = ['bit*',L,regex]
 
-                        dots -=1
-
-                ng_list = ng_list_new
+                ng_list = ng_list_new # Replace ng_list with updated ng_list
 
 
             else:
+                # Add next matrix row to all matrices in ng_list
                 for ng_i in ng_list:
                     ng_i.loc[piece_no] = [piece_name,Lmin,piece[4]]
 
+        # Arrange ng_list into the specified distribution
+        # Currently only 'equal' distribution is available
         dist_data = pd.DataFrame({ 'L':list(range(self.Lmin,self.Lmax+1)) } )
         dist_data['N_matrix'] = [0]*len(dist_data)
 
@@ -390,7 +403,6 @@ class nameGen:
             L = i.L.sum()
             dist_data.loc[dist_data.L==L,'N_matrix'] += 1
             ng_list2[L-self.Lmin] = ng_list2[L-self.Lmin] + [i]
-
 
         self.ng_list = ng_list2
 
