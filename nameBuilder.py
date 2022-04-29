@@ -15,6 +15,9 @@ import htmile as ts
 '''
     --------------- Segment Loading + Cleaning -----------------------
 '''
+# Load word segment document
+w_s = pd.read_csv('./data/word-segments.csv')
+#########
 #--! Import New Segments -------------------------------------------- #
 def new_segments(filepath,old_df=''):
     # Imports a csv file containing a list of word/name new_segments
@@ -137,8 +140,17 @@ def get_regex(marker, abcs=string.ascii_lowercase):
     F = m[0]+F+'.*' # add start indicator and .* to select full segment
     return F
 
-# Load word segment document
-w_s = pd.read_csv('./data/word-segments.csv')
+#--! Export Prefixes [ for Denam ] ---------------------------------- #
+def export_pres(bit_df,abcs=string.ascii_lowercase):
+    csv_list = ['abc','def','ghi','jkl','mno','pqr','stu']
+    pres = bit_df[bit_df.prefix == True]
+
+    for letters in csv_list:
+        preslice = pres.bit[pres.bit.str.contains(
+                        r'^['+letters[0]+'-'+letters[2]+']')]
+        preslice.to_csv('./data/prefixes/'+letters+'.csv',index=False)
+
+    return 'CSV files exported.'
 
 '''
     ------------- Name Generation Classes + Functions ----------------
