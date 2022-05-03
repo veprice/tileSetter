@@ -40,7 +40,7 @@ def refresh(name_generator,notebook=False):
     return display(HTML(html))
 
 # Import word segments and update prefixes
-#nb.w_s = nb.update_pres(nb.w_s)
+nb.w_s = nb.update_pres(nb.w_s)
 
 # Start Default Generator
 bb = nb.nameGen('bit:34:,bit:34:')
