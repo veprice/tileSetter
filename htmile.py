@@ -64,7 +64,7 @@ def unpack_HTML(unpack_me):
 
 '''TileSetters'''
 #--! General Tilesetting Function ---------------------------------- #
-def tileSet(names,linkto='petpage'):
+def tileSet(names,linkto='petpage',local_page=True):
     css = '<link rel="stylesheet" type="text/css" href="style.css">'
     css = pd.Series(css)
     sort_pets_by = {'by':['L','Neopet']}
@@ -82,12 +82,23 @@ def tileSet(names,linkto='petpage'):
 
     html = unpack_HTML(page)
 
-    html.to_csv('./HTML/tileSet.html', sep=',', header=False,
-                index=False, quoting=csv.QUOTE_NONE,
-                escapechar='\n')
+    if local_page==True:
+        html.to_csv('./HTML/tileSet.html', sep=',', header=False,
+                    index=False, quoting=csv.QUOTE_NONE,
+                    escapechar='\n')
+        output = html
+        print('HTML Updated!')
+    else:
+        yey = html
+        yey = yey.str.replace('\t','')
+        yey = yey.str.replace('\n','')
+        yey_html = ''
+        for i in yey[1:]:
+            yey_html += i
 
-    print('HTML Updated!')
-    return
+        output = yey_html
+
+    return output
 
 #-! HTML tag template ----------------------------- #
 class Tagger:

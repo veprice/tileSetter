@@ -213,7 +213,7 @@ class nameGen:
 
         # Run other functions
         self.get_ng()        # create name generator(s)
-        ts.tileSet(self.get_names()) # generate names & tileset
+        ts.tileSet(self.get_names(show_stats=False)) # generate names & tileset
 
     def ngs(self):
         for i in self.ng_list:
@@ -228,17 +228,15 @@ class nameGen:
             ind = (str(i) + ' Letters')
             n = len(self.names[self.names.L == i])
             stats.update({ ind : n })
-        stats.update({' ':'---',
-                      'All Names':len(self.names)
+        stats.update({
+                      'Total Names':len(self.names)
                      })
 
         stats = pd.DataFrame.from_dict(stats,orient='index')
-        stats.columns = [str('NUM')]
+        stats.columns = [str('# of names')]
 
         self.stats['name_data'] = stats
         self.stats['time'] = dt.datetime.now().time().strftime("%I:%M:%S %p")
-
-        self.show_stats()
 
     def show_stats(self):
         print('\nNames Updated!')
@@ -252,7 +250,7 @@ class nameGen:
         print('--------------')
         print('Last Update @ ' + self.stats['time'])
 
-    def get_names(self):
+    def get_names(self, show_stats=True):
         # update distribution data if N has changed significantly
         if abs(self.N - self.dd.names_per.sum()) > 50:
             self.dd['names_per'] = np.ceil(self.N/self.dd.N_matrix/len(self.dd))\
@@ -269,6 +267,10 @@ class nameGen:
                      .reset_index(drop=True) # Cleanup names
         self.names = names
         self.update_stats()
+
+        if show_stats == True:
+            self.show_stats()
+
         return names
 
     def get_ng(self):
