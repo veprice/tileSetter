@@ -15,27 +15,27 @@ import htmile as ts
 import nameBuilder as nb
 
 # create easy-to-call function
-def refresh(name_generator):
-    ts.tileSet(name_generator.get_names())
+def refresh(name_generator,notebook=False):
+    if notebook == False:
+        ts.tileSet(name_generator.get_names())
+        return name_generator.show_stats()
+    else:
+        tiles = ts.tileSet(name_generator.get_names(),local_page=False)
 
-def nb_refresh(name_generator):
-    tiles = ts.tileSet(name_generator.get_names(show_stats=False),local_page=False)
+        with open('./HTML/ipyn_style.css', 'r') as file:
+            css = file.read().replace('\n', '')
 
-    with open('./HTML/ipyn_style.css', 'r') as file:
-        css = file.read().replace('\n', '')
+        html =  '<style>' + css + '</style>'
+        html += '<div style="float:left;padding-left:50px;">'
+        html += name_generator.stats['name_data'].to_html()
+        html += 'Last Updated @'+ name_generator.stats['time']
 
-    html =  '<style>' + css + '</style>'
-    html += '<div style="float:left;padding-left:50px;">'
-    html += name_generator.stats['name_data'].to_html()
-    html += 'Last Updated @'+ name_generator.stats['time']
-
-    html += '</div><div style="float:left;margin-top:0px;padding-left:75px;">'
-    html += '<br><b>Generator:</b>'
-    html += name_generator.ng.to_html()
-    html += '</div>'
-    #html += name_generator.stats['name_data'].to_html()
-    html += tiles
-
+        html += '</div><div style="float:left;margin-top:0px;padding-left:75px;">'
+        html += '<br><b>Generator:</b>'
+        html += name_generator.ng.to_html()
+        html += '</div>'
+        #html += name_generator.stats['name_data'].to_html()
+        html += tiles
 
     return display(HTML(html))
 
@@ -44,6 +44,6 @@ def nb_refresh(name_generator):
 
 # Start Default Generator
 bb = nb.nameGen('bit:34:,bit:34:')
-print(  '\nLoaded name generator \'bb\'.' +
-        '\nTo generate more names, type \'refresh(bb)\')' +
-        '\nor create new name generator using nb.nameGen().')
+print(  '\nLoaded name generator named \'bb\' .' +
+        '\nTo make more names with this generator, use \'refresh(bb)\', OR' +
+        '\ncreate new name generator using nb.nameGen().')

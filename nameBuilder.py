@@ -213,7 +213,7 @@ class nameGen:
 
         # Run other functions
         self.get_ng()        # create name generator(s)
-        ts.tileSet(self.get_names(show_stats=False)) # generate names & tileset
+        ts.tileSet(self.get_names()) # generate names & tileset
 
     def ngs(self):
         for i in self.ng_list:
@@ -250,7 +250,7 @@ class nameGen:
         print('--------------')
         print('Last Update @ ' + self.stats['time'])
 
-    def get_names(self, show_stats=True):
+    def get_names(self):
         # update distribution data if N has changed significantly
         if abs(self.N - self.dd.names_per.sum()) > 50:
             self.dd['names_per'] = np.ceil(self.N/self.dd.N_matrix/len(self.dd))\
@@ -267,9 +267,6 @@ class nameGen:
                      .reset_index(drop=True) # Cleanup names
         self.names = names
         self.update_stats()
-
-        if show_stats == True:
-            self.show_stats()
 
         return names
 
