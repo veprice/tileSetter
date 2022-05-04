@@ -26,3 +26,5 @@ print(  '\nLoaded name generator \'bb\'.' +
         'Open /HTML/tileSetter.html in your favorite browser to see the tiles!' +
         '\nTo generate more names, type \'refresh(bb)\')' +
         '\nor create new name generator using nb.nameGen().')
+
+# Export prefix CSV's
