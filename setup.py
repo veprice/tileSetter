@@ -6,4 +6,6 @@ from setuptools import find_packages, setupsetup(
     author='Cady | UN: penguinluver222',
     license='MIT',
     install_requires['pandas==1.2.4']
+    include_package_data=True,
+    package_data={'': ['data/*.csv']}
 )
