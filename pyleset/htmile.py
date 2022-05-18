@@ -1,7 +1,5 @@
 import pandas as pd
 import csv
-import nameBuilder as nb
-#import petDB as pdb
 
 
 '''HTML generating functions'''

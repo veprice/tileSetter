@@ -10,13 +10,12 @@ import string
 import pandas as pd
 import numpy as np
 import datetime as dt
-import htmile as ts
+# import htmile as ts
 
 '''
     --------------- Segment Loading + Cleaning -----------------------
 '''
-# Load word segment document
-w_s = pd.read_csv('./data/word-segments.csv')
+
 #########
 #--! Import New Segments -------------------------------------------- #
 def new_segments(filepath,old_df=''):
