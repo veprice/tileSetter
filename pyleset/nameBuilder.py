@@ -6,89 +6,21 @@ Created 09/06/2021
 Generates potential names to look at for the pound using syllables and hopefully some statistics on commonality at some point? That'd be cool.
 
 """
-import string
+# import needed packages
 import pandas as pd
 import numpy as np
 import datetime as dt
-# import htmile as ts
+
+# import local modules
+from .dataLoader import _default_bits
+from .htmile import tileSet
 
 '''
-    --------------- Segment Loading + Cleaning -----------------------
-'''
 
-#########
-#--! Import New Segments -------------------------------------------- #
-def new_segments(filepath,old_df=''):
-    # Imports a csv file containing a list of word/name new_segments
-    # Integrates segments into existing segment data
-
-    segments = pd.read_csv(filepath)
-    print('New word segments loaded.')
-    clean_seg = segment_cleaner(segments)
-    print('New word segments cleaned + determined length + cvc format')
-    labeled = label_pres(clean_seg)
-    print('New prefixes labeled.')
-
-    input1 = input('Would you like to merge new segments with existing segments? y/n\n')
-    if input1 == 'y':
-        output = merge_segments(labeled,old_df)
-        print('Merge accepted. Returning merged segment dataframe.')
-    elif input1 =='n':
-        print('Merge declined. Returning new segments only.')
-        output = labeled
-    else:
-        print('Invalid input. Defaulting to return new segments only.')
-    return output
-
-#--! Merge new segments into old segments --------------------------- #
-def merge_segments(new,old):
-    if old == '':
-        error('No existing word segment data found.')
-    else:
-        merged = pd.concat([new,old],ignore_index=True).sort_values(by='bit')
-        merged = merged.drop_duplicates().reset_index(drop=True)
-
-        input = ('Word segment data merged. Would you like to save? y/n')
-        if input == 'y':
-            fname = 'WS_' + str(dt.date.today) + '.csv'
-            merged.to_csv('./data/word-segments/' + fname,index=False)
-            merged.to_csv('./data/word-segments.csv',index=False)
-
-    return merged
-
-#--! Word Segment Cleaner ------------------------------------------- #
-def segment_cleaner(df):
-    # Takes in a series of word/name segments
-    # Returns dataframe with segments + length + cvc format
-
-    df = df.drop_duplicates().sort_values() # Drop duplicates
-    df = df[~df.str.contains(r'[_0-9]')].reset_index(drop=True) # Remove non-letters
-
-    Ls = df.str.len() # get length
-
-    # Construct dataframe
-    final = pd.DataFrame({})
-    final.insert(loc=0,column='bit',value=df)
-    final.insert(loc=1,column='L',value=Ls)
-    return final
-
-#--! Export Prefixes [ for Denam ] ---------------------------------- #
-def export_pres(bit_df,abcs=string.ascii_lowercase):
-    csv_list = ['abc','def','ghi','jkl','mno','pqr','stu']
-    pres = bit_df[bit_df.prefix == True]
-
-    for letters in csv_list:
-        preslice = pres.bit[pres.bit.str.contains(
-                        r'^['+letters[0]+'-'+letters[2]+']')]
-        preslice.to_csv('./data/prefixes/'+letters+'.csv',index=False)
-
-    return 'CSV files exported.'
-
-'''
     ------------- Name Generation Classes + Functions ----------------
 '''
 #--! Build Name from Matrix ----------------------------------------- #
-def build_names( name_matrix, N, bits=w_s, stuck=True ):
+def _build_names( name_matrix, N, ws_df, stuck=True ):
     segments = pd.DataFrame(columns=name_matrix.piece,index=list(range(N)))
     ng = name_matrix
     for piece in ng.itertuples():
@@ -98,10 +30,10 @@ def build_names( name_matrix, N, bits=w_s, stuck=True ):
         # regex = piece[3]
 
 
-        if piece[1] == piece[3]:
+        if piece[1] == piece[3]: # do not sample bits; copy string directly
             segments.iloc[:,piece[0]] = piece[1]
         else:
-            samply = w_s[w_s.L==L]
+            samply = ws_df[ws_df.L==L]
 
             if stuck == True and piece[0] == 0:
                 if L < 3:
@@ -114,10 +46,11 @@ def build_names( name_matrix, N, bits=w_s, stuck=True ):
             samply = samply[samply.bit.str.match(piece[3])]
 
             if len(samply) < N:
-                rep = True
-            else:
-                rep = False
-            segments.iloc[:,piece[0]] = samply.bit.sample(n = N,replace=rep).reset_index(drop=True)
+
+                N = len(samply)
+                print('Showing all '+str(N)+ ' unique '+ str(L)+'L names.\n')
+
+            segments.iloc[:,piece[0]] = samply.bit.sample(n = N).reset_index(drop=True)
     names = pd.DataFrame(index=segments.index,columns=['Neopet','L'])
     names.Neopet = ''
     for i in range(len(segments.columns)):
@@ -128,12 +61,29 @@ def build_names( name_matrix, N, bits=w_s, stuck=True ):
 
 #--! Name Generator class ------------------------------------------- #
 class nameGen:
-    def __init__(self,name_format,N=300,stuck=True,spread='equal'):
+    """
+    A "name generator" object that creates random names of a specified format.
+
+    Args:
+        name_format (str):  a string that specifies the desired name format.
+        N (int):            Number of names to generate.
+                            default: 300
+        stuck (bool):       Only generate names with "sticky" prefixes.
+                            default: True
+        spread:             Distribution of name lengths; only option currently available
+                            is 'equal', though this will hopefully change in a later version.
+
+    Returns:
+        Name generator object with attributes
+
+    """
+    def __init__(self, name_format, N=300, stuck=True, spread='equal', _ns_dat=_default_bits.bitDF):
         # Default Properties
         self.nf = name_format.lower()
         self.stuck = stuck
         self.N = N
         self.spread = spread
+        self.ws = _ns_dat
 
         # Properties to be calculated
         self.Lmin = 0
@@ -144,16 +94,66 @@ class nameGen:
         self.stats = {'time':'','format':'','name_data':''}
 
         # Run other functions
-        self.get_ng()        # create name generator(s)
-        ts.tileSet(self.get_names()) # generate names & tileset
+        self._get_ng()        # create name generator(s)
+        tileSet(self.get_names()) # generate names & tileset
+        self.show_stats()
 
-    def ngs(self):
-        for i in self.ng_list:
-            for j in i:
-                print(j)
-                print('---')
+    def get_names(self,output=True):
+        """
+        Creates randomly generated Neopet names using the name generator's settings.
 
-    def update_stats(self):
+        Args:
+            output:     BOOL    Return names DataFrame as output (in addition to assigning to .names)
+
+
+        Returns:
+            Assigns [generator].names variable to
+            DataFrame of names [if output=True]
+            Neopet      str     Neopet name
+            L           int     Length of name
+
+        """
+        # update distribution data if N has changed significantly
+        if abs(self.N - self.dd.names_per.sum()) > 50:
+            self.dd['names_per'] = np.ceil(self.N/self.dd.N_matrix/len(self.dd))\
+                                          .astype(int)
+        names = pd.DataFrame(columns=['Neopet','L'])
+
+        # generate names for each name generator in self.ng_list
+        for name_group in self.dd.itertuples():
+            for i,matrix in enumerate(self.ng_list[name_group[0]]):
+                temp_names = _build_names( matrix, name_group[3], self.ws, stuck=self.stuck)
+                names = pd.concat([names,temp_names],ignore_index=True)
+
+        names = names.drop_duplicates().sort_values(by=['L','Neopet'])\
+                     .reset_index(drop=True) # Cleanup names
+        self.names = names
+        print('Names Updated!\n')
+
+        self._update_stats()
+
+        if output==False:
+            return
+        else:
+            return names
+
+    def show_stats(self):
+        """
+        Prints statistics about the most recently generated set of Neopet names.
+        """
+        print('Generator\n'+
+              '-----------------------------------')
+        print(self.ng)
+        print('-----------------------------------\n\n' +
+              '--- Name Stats --------\n' +
+              'Stuck? ' + str(self.stuck) + '\n' +
+              '--------------' )
+        print(self.stats['name_data'])
+        print('-----------------------\n' +
+              'Last Update @ ' + self.stats['time'])
+
+
+    def _update_stats(self):
 
         stats = {}
         for i in self.names.L.unique():
@@ -170,40 +170,9 @@ class nameGen:
         self.stats['name_data'] = stats
         self.stats['time'] = dt.datetime.now().time().strftime("%I:%M:%S %p")
 
-    def show_stats(self):
-        print('\nNames Updated!')
-        print('Generator\n'+'------------------')
-        print(self.ng)
-        print('------------------')
-        print('\n' + 'Name Stats' +
-              '\n' + 'Stuck? ' + str(self.stuck) +
-              '\n' + '--------------')
-        print(self.stats['name_data'])
-        print('--------------')
-        print('Last Update @ ' + self.stats['time'])
-
-    def get_names(self):
-        # update distribution data if N has changed significantly
-        if abs(self.N - self.dd.names_per.sum()) > 50:
-            self.dd['names_per'] = np.ceil(self.N/self.dd.N_matrix/len(self.dd))\
-                                          .astype(int)
-        names = pd.DataFrame(columns=['Neopet','L'])
-
-        # generate names for each name generator in self.ng_list
-        for name_group in self.dd.itertuples():
-            for i,matrix in enumerate(self.ng_list[name_group[0]]):
-                temp_names = build_names( matrix, name_group[3], stuck=self.stuck)
-                names = pd.concat([names,temp_names],ignore_index=True)
-
-        names = names.drop_duplicates().sort_values(by=['L','Neopet'])\
-                     .reset_index(drop=True) # Cleanup names
-        self.names = names
-        self.update_stats()
-
-        return names
-
-    def get_ng(self):
+    def _get_ng(self):
         # Create general name generator matrix from user input
+        # (ng = "name generator")
         name_format = self.nf
 
         # Parse user input & set up dataframe
@@ -280,10 +249,10 @@ class nameGen:
         self.Lmax = seg_df.Lmax.sum()
         self.ng = seg_df # name generator
 
-        self.get_ng_list()
+        self._get_ng_list()
         # create list of generator matrices from general generator
 
-    def get_ng_list(self,bits=w_s):
+    def _get_ng_list(self):
         ng = self.ng
         # collapse pieces into minimum 3 letters for stuck prefixes
         if self.stuck == True:
@@ -351,3 +320,10 @@ class nameGen:
 
         dist_data['names_per'] = np.ceil(self.N/dist_data.N_matrix/len(dist_data)).astype(int)
         self.dd = dist_data
+
+    # used for troubleshooting
+    # def ngs(self):
+    #     for i in self.ng_list:
+    #         for j in i:
+    #             print(j)
+    #             print('---')

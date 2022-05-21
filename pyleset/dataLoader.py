@@ -1,60 +1,65 @@
 import pandas as pd
-import string.ascii_lowercase as alphabet
+import string
 import pkg_resources
-from .defaults import defaults
+import datetime as dt
 
-def load_segments(path=defaults['segment_path']):
-    """
-    Returns a dataframe containing default name segments used to build Neopet names.
-
-    Args:
-        path:   string containing filepath of name segment data file
-                If path is not specificied, uses default data.
-
-    Returns:
-        Dataframe with the following columns:
-        bit         str     string containing name segment
-        L           int     length of name segment
-        prefix      bool    True if segment is a "sticky" string
-
-    """
-
-    print('Loading name segments...')
-    if path == '':
-        # This is a stream-like object. If you want the actual info, call
-        # stream.read()
-        stream = pkg_resources.resource_stream(__name__, 'data/word-segments.csv')
-    else:
-        stream == path
-    return pd.read_csv(stream, encoding='latin-1')
-
-def load_stuck_strings(path=defaults['stuck_path']):
-    """
-    Returns a dataframe containing default name segments used to build Neopet names.
-
-    Args:
-        path:   string containing filepath of name segment data file
-                If path is not specificied, uses default data.
-
-    Returns:
-        DataFrame with the following columns:
-        prefix      str     A 3-letter "stuck" prefix
-        marker      str     most recently 'unstuck' pet name with prefix
-    """
-
-    if path == '':
-        # This is a stream-like object. If you want the actual info, call
-        # stream.read()
-
-        stream = pkg_resources.resource_stream(__name__, 'data/stuck-strings.csv')
-    else:
-        stream = path
-    return pd.read_csv(stream, encoding='latin-1')
+# def _get_default_data(subpath):
+#     stream = pkg_resources.resource_stream(__name__,'data/'+subpath)
+#     return
+#
+# def load_segments(filepath=_settings['data_dir']):
+#     """
+#     Returns a dataframe containing default name segments used to build Neopet names.
+#
+#     Args:
+#         path:   string containing filepath of name segment data file
+#                 If path is not specificied, uses default data.
+#
+#     Returns:
+#         Dataframe with the following columns:
+#         bit         str     string containing name segment
+#         L           int     length of name segment
+#         prefix      bool    True if segment is a "sticky" string
+#
+#     """
+#
+#     print('Loading name bits...')
+#     if filepath == '':
+#         # This is a stream-like object. If you want the actual info, call
+#         # stream.read()
+#         path = _get_data_dir('word-segments.csv')
+#     else:
+#         stream == filepath
+#
+#     return pd.read_csv(stream, encoding='latin-1')
+#
+# def load_stuck_strings(filepath):
+#     """
+#     Returns a dataframe containing default name segments used to build Neopet names.
+#
+#     Args:
+#         path:   string containing filepath of name segment data file
+#                 If path is not specificied, uses default data.
+#
+#     Returns:
+#         DataFrame with the following columns:
+#         prefix      str     A 3-letter "stuck" prefix
+#         marker      str     most recently 'unstuck' pet name with prefix
+#     """
+#
+#     if filepath == '':
+#         # This is a stream-like object. If you want the actual info, call
+#         # stream.read()
+#
+#         stream = _get_data_dir('stuck-strings.csv')
+#     else:
+#         stream = path
+#     return pd.read_csv(stream, encoding='latin-1')
 
 #--! Label Segments As Prefixes ------------------------------------- #
-def update_pres(bit_df, stuck_csv=defaults['stuck_path'], abcs=alphabet):
+def label_pres(bit_df, stucks):
     """
-    Updates which prefixes are "sticky" in the name segment DataFrame
+    Updates which prefixes are "sticky" in the name segment DataFrame.
 
     Args:
         bit_df:     DataFrame containing name segments
@@ -67,55 +72,62 @@ def update_pres(bit_df, stuck_csv=defaults['stuck_path'], abcs=alphabet):
         bit         str     string containing name segment
         L           int     length of name segment
         prefix      bool    True if segment is a "sticky" string
+
     """
 
-    inputQ = input('Would you like to update stuck prefixes? y/n\n')
+    print(' - Updating Prefix Labels -')
+    stucks = stucks.replace('\_','~',regex=True)
+    stucks = stucks[~stucks.prefix.str.startswith('~')]\
+             .reset_index(drop=True)
+    markers = stucks.marker.str.lower()
 
-    if inputQ == 'y':
-        print('Updating stuck prefixes ...')
+    bit_df['prefix'] = False
+    N_tagged = ''
+    for n,i in enumerate(markers):
+        # Prints progress to command line
+        N_tagged += markers[n][0:3].upper()
+        if n>0 :
+            if markers[n][0] != markers[n-1][0]:
+                print('   '+markers[n-1][0].upper() +
+                      ' :  ' +
+                      N_tagged[:-5].replace('~','_') )
+                N_tagged = N_tagged[-3:]
+            elif n == len(markers)-1:
+                print('   '+markers[n-1][0].upper() +
+                      ' :  ' + N_tagged.replace('~','s_'))
+        N_tagged += ', '
 
-        stucks = load_stuck_strings()
-        stucks = stucks.replace('\_','~',regex=True)
-        stucks = stucks[~stucks.prefix.str.startswith('~')]\
-                 .reset_index(drop=True)
-        markers = stucks.marker.str.lower()
+        # selects subset of bit_df that matches the 1st two letters
+        sliced = bit_df[bit_df.bit.str.startswith(i[0:2])].copy()
+        # Get regex filter string
+        F = _get_regex(i)
 
-        bit_df['prefix'] = False
-        N_tagged = ''
-        for n,i in enumerate(markers):
-            # Prints progress to command line
-            N_tagged += markers[n][0:3].upper()
-            if n>0 :
-                if markers[n][0] != markers[n-1][0]:
-                    print('Stuck ' + markers[n-1][0].upper() +
-                          ' prefixes:\n\t' +
-                          N_tagged[:-5].replace('~','\_') )
-                    N_tagged = N_tagged[-3:]
-                elif n == len(markers)-1:
-                    print('Stuck ' + markers[n-1][0].upper() +
-                          ' prefixes:\n\t' + N_tagged.replace('~','\_'))
-            N_tagged += ', '
+        # Tag prefixes that match regex as 'True'
+        sliced.loc[sliced.bit.str.fullmatch(F),'prefix'] = True
 
-            # selects subset of bit_df that matches the 1st two letters
-            sliced = bit_df[bit_df.bit.str.startswith(i[0:2])].copy()
-            # Get regex filter string
-            F = get_regex(i)
+        bit_df.update(sliced)
 
-            # Tag prefixes that match regex as 'True'
-            sliced.loc[sliced.bit.str.fullmatch(F),'prefix'] = True
-
-            bit_df.update(sliced)
-        print('Active prefixes updated!')
-    else:
-        print('Prefixes not updated.')
+    print('           - Prefix Labels Updated! -')
 
     return bit_df
 
 #--! Regex Generator for Prefix Filtering --------------------------- #
-def get_regex(marker, abcs=alphabet):
-    # Takes a "marker" string and generates regex
-    # To select all prefixes in that group that
-    # come alphabetically after that marker
+def _get_regex(marker, _abcs=string.ascii_lowercase):
+    """
+    Generates regular expression to select all prefixes that come after the 'marker'.
+
+    Args:
+        marker:     most recently
+        stucks:     DataFrame containing "sticky" prefixes & markers
+                    -> Loaded using load_stuck_strings()
+
+    Returns:
+        DataFrame with the following columns:
+        bit         str     string containing name segment
+        L           int     length of name segment
+        prefix      bool    True if segment is a "sticky" string
+
+    """
 
     m = marker
     # go through marker backwards and omit first 2 letters of marker
@@ -126,17 +138,17 @@ def get_regex(marker, abcs=alphabet):
         if i == 0:
             if m[-1] == '~': # last character is underscore -> do not include last letter in regex selection
                 R6 =''
-                L5 = abcs[abcs.find(L5)+1]
+                L5 = _abcs[_abcs.find(L5)+1]
             else:
-                R0 = abcs[abcs.find(L6)]
+                R0 = _abcs[_abcs.find(L6)]
                 R6 = '['+ R0 + '-z]' # range of last letter
             F = L5 + R6
 
         else:
             if L6 == 'z':
-                R0 = abcs[abcs.find(L6)] # avoid bounds errors when L6 = z
+                R0 = _abcs[_abcs.find(L6)] # avoid bounds errors when L6 = z
             else:
-                R0 = abcs[abcs.find(L6)+1] # range starts at letter after L6
+                R0 = _abcs[_abcs.find(L6)+1] # range starts at letter after L6
             R = '['+ R0 + '-z]'
 
             F = L5 +'('+R+'|'+F+')' # Add to existing regex
@@ -145,6 +157,84 @@ def get_regex(marker, abcs=alphabet):
     F = m[0]+F+'.*' # add start indicator and .* to select full segment
     return F
 
+#--! Data storage & access ------------------------------------------ #
+class bitData:
+    def __init__(self,use_defaults=True):
+        if use_defaults == True:
+            dir_path = pkg_resources.resource_filename(__name__,'data/_defaults/')
+            dir_name = dir_path.split('/')[-2]+'/'
+            bits_name   = 'name-bits.csv'
+            stucks_path = 'stuck-strings.csv'
+            backups_dir = 'backups/'
+
+            loadfrom = 'data/' + dir_name + bits_name
+            loadfrom = pkg_resources.resource_stream(__name__,loadfrom)
+            stuckfrom = 'data/' + dir_name + stucks_path
+            stuckfrom = pkg_resources.resource_stream(__name__,stuckfrom)
+
+            updated = 'data/' + dir_name + backups_dir
+            updated = pkg_resources.resource_listdir(__name__,updated)
+            updated = dt.datetime.strptime(updated[-1][5:15],'%Y-%m-%d')
+
+
+        else:
+            raise('Non-default name segment data are not yet supported.')
+
+        self.settings = {  'path'        : dir_path,
+                            'dir_name'   : dir_name,
+                            'bit_file'   : bits_name,
+                            'stuck_file' : stucks_path,
+                            'backup_dir' : backups_dir
+                          }
+        self._settings = '- Source -:\n' +\
+            '| Data Folder:     '+ self.settings['dir_name']   +'\n'+\
+            '| Folder Location: '+ self.settings['path']       +'\n'+\
+            '| Name Data:       '+ self.settings['bit_file']   +'\n'+\
+            '| Stuck List:      '+ self.settings['stuck_file'] +'\n'+\
+            '| Backup Folder:   '+ self.settings['backup_dir']
+
+        print('\n'+
+              '--- Loading Data... -----------------')
+        print(self._settings)
+
+        self.bitDF = pd.read_csv(loadfrom, encoding='latin-1')
+        self.stuckDF = pd.read_csv(stuckfrom, encoding='latin-1')
+        print('-------------------- Data loaded! ---' + '\n')
+
+        print('--- Checking Prefixes... ------------')
+        print('Last Update: '+ updated.strftime('%b %d %Y'))
+        self.update_pres()
+
+    def update_pres(self):
+        check = input('Update sticky prefixes?\n    (y/n) -> ')
+
+        if check == 'y':
+            self.backup()
+            label_pres(self.bitDF,self.stuckDF)
+            filename = self.settings['path'] + \
+                       self.settings['bit_file']
+            self.bitDF.to_csv(filename,index=False)
+            print('------------- Prefix Updates Saved! ---')
+            print('Saved to: ' + filename + '\n')
+        else:
+            print('----------- Prefix Updates Skipped! ---\n')
+
+    def backup(self):
+        check = input('Save backup?\n    (y/n) -> ')
+        if check == 'y':
+            filename = self.settings['path'] + \
+                       self.settings['backup_dir'] + \
+                       'bits-' + dt.date.today().strftime('%Y-%m-%d') + \
+                       '.csv'
+            self.bitDF.to_csv(filename,index=False)
+            print('                   - Backup Saved! -')
+            print('Saved to: ' + filename + '\n')
+        else:
+            print('                 - Backup Skipped! - \n')
+
+_default_bits = bitData()
+
+#ws = load_segments(_defaults['segment_path'])
 
 #-- Not currently in use but could be useful later ------------------ #
 # #--! Import New Segments -------------------------------------------- #

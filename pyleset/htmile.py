@@ -36,33 +36,34 @@ def get_pet_tiles(names,link_to='petpage',tiyg=False):
 
 #--! Sort pets into <divs> by name length ------------------------- #
 def make_L_divs(names):
-        divdict = {}
-        for i in names.L.unique():
-            nameslice = names[names.L == i]
+    divdict = {}
+    for i in names.L.unique():
+        nameslice = names[names.L == i]
 
-            i_name = str(i) + ' Letters'
-            iL_div =  [ h2.wrap(i_name,wrap_by='block') ]
-            iL_div += nameslice.pet_div.values.tolist()
-            iL_div = pd.Series(iL_div)
-            Ldiv = div.wrap(iL_div,wrap_by='block',class_='petgroup')
+        i_name = str(i) + ' Letters'
+        iL_div =  [ h2.wrap(i_name,wrap_by='block') ]
+        iL_div += nameslice.pet_div.values.tolist()
+        iL_div = pd.Series(iL_div)
+        Ldiv = div.wrap(iL_div,wrap_by='block',class_='petgroup')
 
-            divdict[i_name] = Ldiv.explode()
-        return divdict
+        divdict[i_name] = Ldiv.explode()
+    return divdict
 
 #--! Unpack webpage from dictionary to Series --------------------- #
 def unpack_HTML(unpack_me):
-        # unpacks HTML from dictionary into pandas series
-        page = []
-        for keys,values in unpack_me.items():
-            page += values.tolist()
-            page += ['\n']
+    # unpacks HTML from dictionary into pandas series
+    page = []
+    for keys,values in unpack_me.items():
+        page += values.tolist()
+        page += ['\n']
 
-        page = pd.Series(page)
-        return page
+    page = pd.Series(page)
+    return page
 
 '''TileSetters'''
 #--! General Tilesetting Function ---------------------------------- #
 def tileSet(names,linkto='petpage',local_page=True):
+    print('--- Generating HTML... --------------')
     css = '<link rel="stylesheet" type="text/css" href="style.css">'
     css = pd.Series(css)
     sort_pets_by = {'by':['L','Neopet']}
@@ -81,11 +82,14 @@ def tileSet(names,linkto='petpage',local_page=True):
     html = unpack_HTML(page)
 
     if local_page==True:
-        html.to_csv('./HTML/tileSet.html', sep=',', header=False,
+        filepath = './HTML/tileSet.html'
+        html.to_csv(filepath, sep=',', header=False,
                     index=False, quoting=csv.QUOTE_NONE,
                     escapechar='\n')
         output = html
-        print('HTML Updated!')
+        print('------------------- HTML Updated! ---')
+        print('Saved to: ' + filepath + '\n')
+
     else:
         yey = html
         yey = yey.str.replace('\t','')
@@ -186,7 +190,7 @@ class Tagger:
         return new_boi
 
 a = Tagger('a', href='')
-img = Tagger('img', single=True, src='' )
+img = Tagger('img', single=True, src='')
 div = Tagger('div')
 p = Tagger('p')
 h2 = Tagger('h2')
