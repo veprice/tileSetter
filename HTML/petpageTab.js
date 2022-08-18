@@ -83,7 +83,7 @@ function getAge() {
     }
 
     try {
-        age.hours = document.body.innerHTML.match(/[0-9]* hours/)[0].split(" ")[0]; // finds pet age in hours
+        age.hours = document.body.innerHTML.match(/\d*\s*hour/)[0].split(" ")[0]; // finds pet age in hours
     }
     catch {
         petStats.birthday = '';
