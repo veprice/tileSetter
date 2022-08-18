@@ -14,6 +14,76 @@ var petStats = {
 }
 var div = document.createElement("div");
 
+console.log(document.body.innerHTML.match(/\d+\s*hour/));
+
+function loadButtons(){
+    var btn = document.createElement('div');
+    var btn_x = document.createElement('div');
+
+    btn.innerHTML = '<div id="btn_" class="btn">ᐊ</div>' //<button id='myButton'>Send default message</button>";
+    div.appendChild(btn);
+
+    btn_x.innerHTML = '<div id="btn_x" class="btn">⨉</div>' //<button id='myButton'>Send default message</button>";
+    div.appendChild(btn);
+    div.appendChild(btn_x);
+
+    document.getElementById('btn_').addEventListener('click', hideMe, false);
+    document.getElementById('btn_x').addEventListener('click', closeMe, false);
+}
+
+function hideMe() {
+    var x = document.getElementById("petInfo_");
+    var btn_ = document.getElementById("btn_");
+    if (btn_.innerHTML==="ᐊ") {
+        x.style.margin = '0 0 0 -102px';
+        btn_.innerHTML = 'ᐅ';
+    } else {
+        btn_.innerHTML = 'ᐊ';
+        x.style.margin = '0';
+  }
+}
+
+function closeMe() {
+    var x = document.getElementById("petInfo_")
+    console.log('woop')
+    x.style.display="none"
+}
+
+function getAge() {
+    let age = {
+        'hours':'',
+        'bdayDT':'',
+    }
+    let ageMatch = [/\d+\s+hour/,/Age:\w+\d+/, /\d+\s+old/]
+
+
+    //age.hours = document.body.innerHTML.match(/\d*\s*hour/)[0].split(" ")[0]; // finds pet age in hours
+    let ageString
+    for (const ageOptions in ageMatch) {
+        ageString = document.body.innerHTML.match(ageOptions)
+        if ( ageString ) {
+            age.hours = ageString[0].match(/\d+/)
+            break;
+        }
+    }
+
+
+    if ( age.hours ) {
+        let dtOptions = {
+            timeZone: 'America/Los_Angeles',
+            month: 'long',
+            day: 'numeric'
+        }
+        // Calculates pet's birthday
+        age.bdayDT = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+        age.bdayDT.setHours(age.bdayDT.getHours() - parseInt(age.hours, 10));
+
+        // Update Pet Age & Birthday
+        petStats.birthday = new Intl.DateTimeFormat('default', dtOptions).format(age.bdayDT)
+        petStats.year = age.bdayDT.getFullYear() - 1998
+    }
+}
+
 function getBG(key) {
     let colors = {
     'red':'#F79895',
@@ -74,69 +144,6 @@ function getBG(key) {
     }
     return bg
     //div.innerHTML += `<p><b>${key}: </b>\t${petStats[key]}</p>`;
-}
-
-function getAge() {
-    let age = {
-        'hours':'',
-        'bdayDT':'',
-    }
-
-    try {
-        age.hours = document.body.innerHTML.match(/\d*\s*hour/)[0].split(" ")[0]; // finds pet age in hours
-    }
-    catch {
-        petStats.birthday = '';
-        petStats.year = '';
-    }
-
-    if ( age.hours ) {
-        let dtOptions = {
-            timeZone: 'America/Los_Angeles',
-            month: 'long',
-            day: 'numeric'
-        }
-        // Calculates pet's birthday
-        age.bdayDT = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
-        age.bdayDT.setHours(age.bdayDT.getHours() - parseInt(age.hours, 10));
-
-        // Update Pet Age & Birthday
-        petStats.birthday = new Intl.DateTimeFormat('default', dtOptions).format(age.bdayDT)
-        petStats.year = age.bdayDT.getFullYear() - 1998
-    }
-}
-
-function loadButtons(){
-    var btn = document.createElement('div');
-    var btn_x = document.createElement('div');
-
-    btn.innerHTML = '<div id="btn_" class="btn">ᐊ</div>' //<button id='myButton'>Send default message</button>";
-    div.appendChild(btn);
-
-    btn_x.innerHTML = '<div id="btn_x" class="btn">⨉</div>' //<button id='myButton'>Send default message</button>";
-    div.appendChild(btn);
-    div.appendChild(btn_x);
-
-    document.getElementById('btn_').addEventListener('click', hideMe, false);
-    document.getElementById('btn_x').addEventListener('click', closeMe, false);
-}
-
-function hideMe() {
-    var x = document.getElementById("petInfo_");
-    var btn_ = document.getElementById("btn_");
-    if (btn_.innerHTML==="ᐊ") {
-        x.style.margin = '0 0 0 -102px';
-        btn_.innerHTML = 'ᐅ';
-    } else {
-        btn_.innerHTML = 'ᐊ';
-        x.style.margin = '0';
-  }
-}
-
-function closeMe() {
-    var x = document.getElementById("petInfo_")
-    console.log('woop')
-    x.style.display="none"
 }
 
 function createHTML() {
@@ -204,7 +211,6 @@ function createHTML() {
     for (const key in petStats) {
         if (petStats[key] != '') {
         div.innerHTML += `<p style="background:${getBG(key)};">\t${petStats[key]}</p>`; }
-        console.log(petStats.key)
     }
 
 
@@ -214,6 +220,3 @@ function createHTML() {
 
 getAge();
 createHTML();
-/*if (btn) {
-    btn.addEventListener ("click", hideMe() , false);
-}*/
