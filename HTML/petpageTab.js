@@ -14,7 +14,7 @@ var petStats = {
 }
 var div = document.createElement("div");
 
-console.log(document.body.innerHTML.match(/\d+\s*hour/));
+//console.log(document.body.innerHTML.match(/\d+\s*hour/));
 
 function loadButtons(){
     var btn = document.createElement('div');
@@ -54,21 +54,22 @@ function getAge() {
         'hours':'',
         'bdayDT':'',
     }
-    let ageMatch = [/\d+\s+hour/,/Age:\w+\d+/, /\d+\s+old/]
+    let ageMatch = [ /\d+\s+hour/, /Age:\s+\d+/, /\d+\s+old/ ]
 
 
-    //age.hours = document.body.innerHTML.match(/\d*\s*hour/)[0].split(" ")[0]; // finds pet age in hours
     let ageString
     for (const ageOptions in ageMatch) {
-        ageString = document.body.innerHTML.match(ageOptions)
+        ageString = document.body.innerHTML.match(ageMatch[ageOptions])
+        console.log(ageString)
+        //console.log(ageString[0])
         if ( ageString ) {
+            console.log(ageString)
             age.hours = ageString[0].match(/\d+/)
             break;
         }
     }
 
-
-    if ( age.hours ) {
+    if ( age.hours != '') {
         let dtOptions = {
             timeZone: 'America/Los_Angeles',
             month: 'long',
