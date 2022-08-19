@@ -5,12 +5,19 @@
 // @include        http*://www.neopets.com/~*
 // @include        http*://www.neopets.com//~*
 // ==/UserScript==
-
+console.log(document.URL);
 var petStats = {
-    'name': document.getElementsByTagName("title")[0].innerHTML.trim().split(" ")[0], // get Neopet name,
+    'name': '',
     'year':'',
     'birthday':'',
-    'owner': document.links[0].href.split("=")[1], // get username
+    'owner': ''
+}
+try {
+    petStats.name = document.getElementsByTagName("title")[0].innerHTML.trim().split(" ")[0]; // get pet name
+    petStats.owner = document.links[0].href.split("=")[1] // get owner name
+}
+catch {
+    petStats.name = document.URL.split('~')[1];
 }
 var div = document.createElement("div");
 
@@ -45,7 +52,6 @@ function hideMe() {
 
 function closeMe() {
     var x = document.getElementById("petInfo_")
-    console.log('woop')
     x.style.display="none"
 }
 
@@ -60,10 +66,7 @@ function getAge() {
     let ageString
     for (const ageOptions in ageMatch) {
         ageString = document.body.innerHTML.match(ageMatch[ageOptions])
-        console.log(ageString)
-        //console.log(ageString[0])
         if ( ageString ) {
-            console.log(ageString)
             age.hours = ageString[0].match(/\d+/)
             break;
         }
@@ -217,6 +220,8 @@ function createHTML() {
 
     loadButtons();
 }
+
+console.log(document.body[0]);
 
 
 getAge();
